@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
+import 'package:cryptography/dart.dart';
 import 'package:shelf_cookie/shelf_cookie.dart';
 import 'package:test/test.dart';
 
@@ -54,5 +57,36 @@ void main() {
       cookies.toString(),
       equals('foo=bar; HttpOnly, baz=qux; Secure; HttpOnly'),
     );
+  });
+
+  //encrypted cookies
+  test('encodes and ciphers an encrypted cookie', () async {
+    var cookies = CookieParser.fromCookieValue(null);
+    final keyStr = "12345678901234567890123456789012";
+    await cookies.setEncrypted('baz', 'qux', keyStr);
+    var cookie = cookies.get('baz');
+    var decoded = base64.decode(cookie!.value);
+    final algorithm = AesGcm.with256bits();
+    final key = await algorithm.newSecretKeyFromBytes(utf8.encode(keyStr));
+    //can't use fromConcatenation constructor because of this:
+    //https://github.com/dint-dev/cryptography/issues/55
+    //final box = SecretBox.fromConcatenation(decoded, nonceLength: 12, macLength: 16);
+    final cipherText = decoded.skip(12).take(decoded.length - 12 - 16).toList();
+    final nonce = decoded.take(12).toList();
+    final mac =
+        decoded.skip(nonce.length + cipherText.length).take(16).toList();
+    final box = SecretBox(cipherText, nonce: nonce, mac: Mac(mac));
+    final bytes = await algorithm.decrypt(box, secretKey: key);
+    final value = utf8.decode(bytes);
+    expect(value, 'qux');
+  });
+
+  test('decodes and deciphers an encrypted cookie', () async {
+    var cookies = CookieParser.fromCookieValue(null);
+    final keyStr = "12345678901234567890123456789012";
+    await cookies.setEncrypted('baz', 'qux', keyStr);
+    var cookie = await cookies.getEncrypted('baz', keyStr);
+    expect(cookie != null, true);
+    expect(cookie!.value, 'qux');
   });
 }

@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:cryptography/cryptography.dart';
 import 'package:shelf/shelf.dart';
 
 /// Parses cookies from the `Cookie` header of a [Request].
@@ -30,8 +32,8 @@ class CookieParser {
   bool get isEmpty => cookies.isEmpty;
 
   /// Retrieves a cookie by [name].
-  Cookie? get(String name) => cookies
-      .firstWhereOrNull((Cookie cookie) => cookie.name == name);
+  Cookie? get(String name) =>
+      cookies.firstWhereOrNull((Cookie cookie) => cookie.name == name);
 
   /// Adds a new cookie to [cookies] list.
   Cookie set(
@@ -61,6 +63,72 @@ class CookieParser {
     }
     return cookie;
   }
+
+  /// Retrieves a deciphered cookie by [name].
+  // secretKey length must be exactly 32 bytes
+  Future<Cookie?> getEncrypted(String name, String secretKey) async {
+    final keyBytes = utf8.encode(secretKey);
+    if (keyBytes.length != 32)
+      throw Exception(
+          'Expected secretKey length is 32, but got: ${keyBytes.length}');
+    final cookie =
+        cookies.firstWhereOrNull((Cookie cookie) => cookie.name == name);
+    if (cookie == null) return null;
+    var decoded = base64.decode(cookie.value);
+    if (decoded.length <= 12 + 16)
+      throw Exception('Wrong encrypted cookie length');
+    final algorithm = AesGcm.with256bits();
+    final key = await algorithm.newSecretKeyFromBytes(keyBytes);
+    //can't use fromConcatenation constructor because of this:
+    //https://github.com/dint-dev/cryptography/issues/55
+    //final box = SecretBox.fromConcatenation(decoded, nonceLength: 12, macLength: 16);
+    final cipherText = decoded.skip(12).take(decoded.length - 12 - 16).toList();
+    final nonce = decoded.take(12).toList();
+    final mac =
+        decoded.skip(nonce.length + cipherText.length).take(16).toList();
+    final box = SecretBox(cipherText, nonce: nonce, mac: Mac(mac));
+    final bytes = await algorithm.decrypt(box, secretKey: key);
+    cookie.value = utf8.decode(bytes);
+    return cookie;
+  }
+
+  /// Adds a new ciphered cookie to [cookies] list.
+  // secretKey length must be exactly 32 bytes
+  Future<Cookie> setEncrypted(
+    String name,
+    String value,
+    String secretKey, {
+    String? domain,
+    String? path,
+    DateTime? expires,
+    bool? httpOnly,
+    bool? secure,
+    int? maxAge,
+  }) async {
+    final keyBytes = utf8.encode(secretKey);
+    if (keyBytes.length != 32)
+      throw Exception(
+          'Expected secretKey length is 32, but got: ${keyBytes.length}');
+    final valueBytes = utf8.encode(value);
+    final algorithm = AesGcm.with256bits(nonceLength: 12);
+
+    final key = await algorithm.newSecretKeyFromBytes(keyBytes);
+    // Encrypt
+    final secretBox = await algorithm.encrypt(
+      valueBytes,
+      secretKey: key,
+    );
+    var encryptedValue = base64.encode(secretBox.concatenation());
+
+    return set(name, encryptedValue,
+        domain: domain,
+        path: path,
+        expires: expires,
+        httpOnly: httpOnly,
+        secure: secure,
+        maxAge: maxAge);
+  }
+  //--DEN
 
   /// Removes a cookie from list by [name].
   void remove(String name) =>
