@@ -1,11 +1,12 @@
-name: shelf_cookie
-version: 2.0.0
+name: shelf_secure_cookie
+version: 1.0.0
 description: >-
   Cookie parser middleware for the Shelf ecosystem.
   Reads cookies in request, sets cookies in response.
-author: izolate <izolate@gmail.com>
-homepage: https://github.com/izolate/shelf-cookie
-documentation: https://github.com/izolate/shelf-cookie/blob/master/README.md
+  Supports AES-GCM for encryption if needed.
+author: denis.bakhtin <denis.bakhtin@gmail.com>
+homepage: https://github.com/denisbakhtin/shelf-secure-cookie
+documentation: https://github.com/denisbakhtin/shelf-secure-cookie/blob/master/README.md
 
 environment:
   sdk: '>=2.12.0 <3.0.0'

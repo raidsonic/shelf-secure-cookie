@@ -1,4 +1,10 @@
-# shelf_cookie
+# shelf_secure_cookie
+
+Based on `shelf_cookie` package, added async `setEncrypted` and `getEncrypted` cookie methods, that support `AES-GCM` cipher with digest. These should be used to store sensitive data, if you prefer a cookie storage.
+
+Both methods require a 32-byte secret key.
+
+## Original docs
 
 Cookie parser middleware for the Dart Shelf ecosystem.
 Reads cookies in request, sets cookies in response.
