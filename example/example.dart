@@ -1,6 +1,6 @@
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as io;
-import 'package:shelf_cookie/shelf_cookie.dart';
+import 'package:shelf_cookie/shelf_secure_cookie.dart';
 
 void main() {
   /// Request contains cookie header.
