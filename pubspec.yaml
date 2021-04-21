@@ -4,7 +4,6 @@ description: >-
   Cookie parser middleware for the Shelf ecosystem.
   Reads cookies in request, sets cookies in response.
   Supports AES-GCM for encryption if needed.
-author: denis.bakhtin <denis.bakhtin@gmail.com>
 homepage: https://github.com/denisbakhtin/shelf-secure-cookie
 documentation: https://github.com/denisbakhtin/shelf-secure-cookie/blob/master/README.md
 

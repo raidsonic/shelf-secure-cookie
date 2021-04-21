@@ -2,8 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
-import 'package:cryptography/dart.dart';
-import 'package:shelf_cookie/shelf_cookie.dart';
+import 'package:shelf_secure_cookie/shelf_secure_cookie.dart';
 import 'package:test/test.dart';
 
 void main() {
