@@ -4,7 +4,7 @@ Based on `shelf_cookie` package, added async `setEncrypted` and `getEncrypted` c
 
 Both methods require a 32-byte secret key.
 
-This package is now battle-tested yet, but I'm working on this. Also if you happened to download 1.0.0 version, update to 1.0.2 as soon as possible.
+This package is not battle-tested yet, but I'm working on this. Also if you happened to download 1.0.0 version, update to >=1.0.2 as soon as possible.
 
 See `example/example.dart` for details.
 
