@@ -4,6 +4,8 @@ Based on `shelf_cookie` package, added async `setEncrypted` and `getEncrypted` c
 
 Both methods require a 32-byte secret key.
 
+This package is now battle-tested yet, but I'm working on this. Also if you happened to download 1.0.0 version, update to 1.0.1 as soon as possible.
+
 ## Original docs
 
 Cookie parser middleware for the Dart Shelf ecosystem.
