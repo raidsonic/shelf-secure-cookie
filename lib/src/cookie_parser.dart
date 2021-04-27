@@ -15,17 +15,20 @@ import 'package:shelf/shelf.dart';
 class CookieParser {
   /// A list of parsed cookies.
   final List<Cookie> cookies = [];
+  final String secretKey;
 
   /// Creates a new [CookieParser] by parsing the `Cookie` header [value].
-  CookieParser.fromCookieValue(String? value) {
+  CookieParser.fromCookieValue(String? value, [this.secretKey = ""]) {
     if (value != null) {
       cookies.addAll(_parseCookieString(value));
     }
   }
 
   /// Factory constructor to create a new instance from request [headers].
-  factory CookieParser.fromHeader(Map<String, dynamic> headers) {
-    return CookieParser.fromCookieValue(headers[HttpHeaders.cookieHeader]);
+  factory CookieParser.fromHeader(Map<String, dynamic> headers,
+      [String secretKey = ""]) {
+    return CookieParser.fromCookieValue(
+        headers[HttpHeaders.cookieHeader], secretKey);
   }
 
   /// Denotes whether the [cookies] list is empty.
@@ -66,14 +69,21 @@ class CookieParser {
 
   /// Retrieves a deciphered cookie by [name].
   // secretKey length must be exactly 32 bytes
-  Future<Cookie?> getEncrypted(String name, String secretKey) async {
+  Future<Cookie?> getEncrypted(String name) async {
     final keyBytes = utf8.encode(secretKey);
     if (keyBytes.length != 32)
       throw Exception(
           'Expected secretKey length is 32, but got: ${keyBytes.length}');
-    final cookie =
-        cookies.firstWhereOrNull((Cookie cookie) => cookie.name == name);
-    if (cookie == null) return null;
+    final scookie = get(name);
+    if (scookie == null) return null;
+    //copy cookie to prevent raw data leak :D
+    final cookie = Cookie(scookie.name, scookie.value)
+      ..domain = scookie.domain
+      ..expires = scookie.expires
+      ..httpOnly = scookie.httpOnly
+      ..maxAge = scookie.maxAge
+      ..path = scookie.path
+      ..secure = scookie.secure;
     var decoded = base64.decode(cookie.value);
     if (decoded.length <= 12 + 16)
       throw Exception('Wrong encrypted cookie length');
@@ -96,8 +106,7 @@ class CookieParser {
   // secretKey length must be exactly 32 bytes
   Future<Cookie> setEncrypted(
     String name,
-    String value,
-    String secretKey, {
+    String value, {
     String? domain,
     String? path,
     DateTime? expires,

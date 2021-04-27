@@ -60,9 +60,9 @@ void main() {
 
   //encrypted cookies
   test('encodes and ciphers an encrypted cookie', () async {
-    var cookies = CookieParser.fromCookieValue(null);
     final keyStr = "12345678901234567890123456789012";
-    await cookies.setEncrypted('baz', 'qux', keyStr);
+    var cookies = CookieParser.fromCookieValue(null, keyStr);
+    await cookies.setEncrypted('baz', 'qux');
     var cookie = cookies.get('baz');
     var decoded = base64.decode(cookie!.value);
     final algorithm = AesGcm.with256bits();
@@ -81,10 +81,10 @@ void main() {
   });
 
   test('decodes and deciphers an encrypted cookie', () async {
-    var cookies = CookieParser.fromCookieValue(null);
     final keyStr = "12345678901234567890123456789012";
-    await cookies.setEncrypted('baz', 'qux', keyStr);
-    var cookie = await cookies.getEncrypted('baz', keyStr);
+    var cookies = CookieParser.fromCookieValue(null, keyStr);
+    await cookies.setEncrypted('baz', 'qux');
+    var cookie = await cookies.getEncrypted('baz');
     expect(cookie != null, true);
     expect(cookie!.value, 'qux');
   });
