@@ -15,10 +15,11 @@ import 'package:shelf/shelf.dart';
 class CookieParser {
   /// A list of parsed cookies.
   final List<Cookie> cookies = [];
-  final String secretKey;
+  final String _secretKey;
 
   /// Creates a new [CookieParser] by parsing the `Cookie` header [value].
-  CookieParser.fromCookieValue(String? value, [this.secretKey = ""]) {
+  CookieParser.fromCookieValue(String? value, [String secretKey = ""])
+      : this._secretKey = secretKey {
     if (value != null) {
       cookies.addAll(_parseCookieString(value));
     }
@@ -70,7 +71,7 @@ class CookieParser {
   /// Retrieves a deciphered cookie by [name].
   // secretKey length must be exactly 32 bytes
   Future<Cookie?> getEncrypted(String name) async {
-    final keyBytes = utf8.encode(secretKey);
+    final keyBytes = utf8.encode(_secretKey);
     if (keyBytes.length != 32)
       throw Exception(
           'Expected secretKey length is 32, but got: ${keyBytes.length}');
@@ -114,7 +115,7 @@ class CookieParser {
     bool? secure,
     int? maxAge,
   }) async {
-    final keyBytes = utf8.encode(secretKey);
+    final keyBytes = utf8.encode(_secretKey);
     if (keyBytes.length != 32)
       throw Exception(
           'Expected secretKey length is 32, but got: ${keyBytes.length}');

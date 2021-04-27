@@ -11,10 +11,10 @@ import 'cookie_parser.dart';
 /// with convenience methods to manipulate cookies in request handlers.
 ///
 /// Adds a `Set-Cookie` HTTP header to the response with all cookies.
-shelf.Middleware cookieParser() {
+shelf.Middleware cookieParser([String secretKey = ""]) {
   return (shelf.Handler innerHandler) {
     return (shelf.Request request) {
-      var cookies = CookieParser.fromHeader(request.headers);
+      var cookies = CookieParser.fromHeader(request.headers, secretKey);
       return Future.sync(() {
         return innerHandler(
           request.change(context: {'cookies': cookies}),
