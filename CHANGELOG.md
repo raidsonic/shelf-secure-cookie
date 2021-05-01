@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2021-04-27
+### Fixed
+- Changed original middleware, now you have to set response headers explicitly, see example. But I will rearrange this later.
+- Now encrypted cookies use `base64Url` encoding instead of `base64`.
+
 ## [1.0.6] - 2021-04-27
 ### Fixed
 - Fixed CHANGELOG

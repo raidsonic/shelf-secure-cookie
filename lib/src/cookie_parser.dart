@@ -9,13 +9,13 @@ import 'package:shelf/shelf.dart';
 ///
 /// Stores all cookies in a [cookies] list, and has convenience
 /// methods to manipulate this list.
-///
-/// `toString()` method converts list items to a `Set-Cookie`
-/// HTTP header value according to RFC 2109 spec (deprecated).
 class CookieParser {
   /// A list of parsed cookies.
   final List<Cookie> cookies = [];
   final String _secretKey;
+
+  // creates new empty CookieParser, same as CookieParser.fromCookieValue(null)
+  CookieParser([String secretKey = ""]) : _secretKey = secretKey;
 
   /// Creates a new [CookieParser] by parsing the `Cookie` header [value].
   CookieParser.fromCookieValue(String? value, [String secretKey = ""])
@@ -31,6 +31,10 @@ class CookieParser {
     return CookieParser.fromCookieValue(
         headers[HttpHeaders.cookieHeader], secretKey);
   }
+
+  /// Use this method to set Response's 'set-cookie' header
+  /// Shelf now supports multiple 'set-cookie' values, that is why method returns List<String>
+  List<String> toHeader() => cookies.map((c) => c.toString()).toList();
 
   /// Denotes whether the [cookies] list is empty.
   bool get isEmpty => cookies.isEmpty;
@@ -85,7 +89,7 @@ class CookieParser {
       ..maxAge = scookie.maxAge
       ..path = scookie.path
       ..secure = scookie.secure;
-    var decoded = base64.decode(cookie.value);
+    var decoded = base64Url.decode(cookie.value);
     if (decoded.length <= 12 + 16)
       throw Exception('Wrong encrypted cookie length');
     final algorithm = AesGcm.with256bits();
@@ -124,11 +128,8 @@ class CookieParser {
 
     final key = await algorithm.newSecretKeyFromBytes(keyBytes);
     // Encrypt
-    final secretBox = await algorithm.encrypt(
-      valueBytes,
-      secretKey: key,
-    );
-    var encryptedValue = base64.encode(secretBox.concatenation());
+    final secretBox = await algorithm.encrypt(valueBytes, secretKey: key);
+    var encryptedValue = base64Url.encode(secretBox.concatenation());
 
     return set(name, encryptedValue,
         domain: domain,
@@ -138,7 +139,6 @@ class CookieParser {
         secure: secure,
         maxAge: maxAge);
   }
-  //--DEN
 
   /// Removes a cookie from list by [name].
   void remove(String name) =>
@@ -146,29 +146,6 @@ class CookieParser {
 
   /// Clears the cookie list.
   void clear() => cookies.clear();
-
-  /// Converts the cookies to a string value to use in a `Set-Cookie` header.
-  ///
-  /// This implements the old RFC 2109 spec, which allowed for multiple
-  /// cookies to be folded into a single `Set-Cookie` header value,
-  /// separated by commas.
-  ///
-  /// As of RFC 6265, this folded mechanism is deprecated in favour of
-  /// a multi-header approach.
-  ///
-  /// Unfortunately, Shelf doesn't currently support multiple headers
-  /// of the same type. This is an ongoing issue, but once resolved,
-  /// this method can be deprecated.
-  ///
-  /// https://github.com/dart-lang/shelf/issues/44
-  String toString() {
-    return cookies.fold(
-      '',
-      (prev, element) => prev.isEmpty
-          ? element.toString()
-          : '${prev.toString()}, ${element.toString()}',
-    );
-  }
 }
 
 /// Parse a Cookie header value according to the rules in RFC 6265.

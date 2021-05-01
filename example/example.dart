@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_cookie/shelf_secure_cookie.dart';
@@ -17,16 +19,15 @@ void main() {
       .addHandler((req) async {
     CookieParser cookies = req.context['cookies'] as CookieParser;
     if (cookies.get('ping') != null) {
-      // Clear cookies because Shelf currently only supports
-      // a single `Set-Cookie` header in response.
-      cookies.clear();
       //secure: true - means send it via https only
+      cookies.clear(); //or cookies = CookieParser(); to create a new instance
       cookies.setEncrypted('pong', 'bar', secure: true, httpOnly: true);
     }
 
     // Response will set cookie header.
     // e.g. 'set-cookie': 'pong=someencryptedandsignedvalue; Secure; HttpOnly'
-    return shelf.Response.ok('check your cookies');
+    return shelf.Response.ok('check your cookies',
+        headers: {HttpHeaders.setCookieHeader: cookies.toHeader()});
   });
 
   io.serve(handler, 'localhost', 8080).then((server) {

@@ -1,8 +1,8 @@
 name: shelf_secure_cookie
-version: 1.0.6
+version: 1.1.0
 description: >-
   Cookie parser middleware for the Shelf ecosystem.
-  Reads cookies in request, sets cookies in response.
+  Reads cookies in request, sets cookies in response. 
   Supports AES-GCM for encryption if needed.
 homepage: https://github.com/denisbakhtin/shelf-secure-cookie
 documentation: https://github.com/denisbakhtin/shelf-secure-cookie/blob/master/README.md
@@ -17,3 +17,4 @@ dependencies:
 
 dev_dependencies:
   test: ^1.16.6
+  shelf_router: ^1.0.0 

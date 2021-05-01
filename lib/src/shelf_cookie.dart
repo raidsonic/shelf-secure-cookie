@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io';
-
-import 'package:shelf/shelf.dart' as shelf;
+import 'package:shelf/shelf.dart';
 
 import 'cookie_parser.dart';
 
@@ -11,23 +9,17 @@ import 'cookie_parser.dart';
 /// with convenience methods to manipulate cookies in request handlers.
 ///
 /// Adds a `Set-Cookie` HTTP header to the response with all cookies.
-shelf.Middleware cookieParser([String secretKey = ""]) {
-  return (shelf.Handler innerHandler) {
-    return (shelf.Request request) {
-      var cookies = CookieParser.fromHeader(request.headers, secretKey);
+
+Middleware cookieParser([String secretKey = ""]) {
+  return (Handler innerHandler) {
+    return (Request request) {
       return Future.sync(() {
+        final cookies = CookieParser.fromHeader(request.headers, secretKey);
         return innerHandler(
           request.change(context: {'cookies': cookies}),
         );
-      }).then((shelf.Response response) {
-        if (cookies.isEmpty) {
-          return response;
-        }
-        return response.change(
-          headers: {HttpHeaders.setCookieHeader: cookies.toString()},
-        );
-      }, onError: (error, StackTrace stackTrace) {
-        throw error;
+      }).then((Response response) {
+        return response;
       });
     };
   };

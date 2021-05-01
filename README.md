@@ -1,4 +1,5 @@
 # shelf_secure_cookie
+API change: now encrypted cookies use `base64Url` encoding instead of plain `base64`. Also I changed middleware, now you have to set response headers explicitly, see TODO. Forgive me this, but I think this is a step in the right direction, I will find a handy workaround later.
 
 Based on `shelf_cookie` package, added async `setEncrypted` and `getEncrypted` cookie methods, that support `AES-GCM` cipher with digest. These should be used to store sensitive data, if you prefer a cookie storage.
 
@@ -44,6 +45,9 @@ var handler = const shelf.Pipeline()
 
   // Middleware will add `Set-Cookie` response header.
   // e.g. 'Set-Cookie': 'pong=bar; Secure; HttpOnly'
-  return shelf.Response.ok('OK');
+  return shelf.Response.ok('OK', headers: {HttpHeaders.setCookieHeader: cookies.toHeader()});
 });
 ```
+
+## TODO
+Add handy Request & Response extensions or adapt `cookieParser()` middleware to read newly set cookies. The original version of middleware required to call `cookies.clear()` every time before setting new values and if you forget this, it became messy. So now you have to set headers explicitly, but hopefully not for long.
