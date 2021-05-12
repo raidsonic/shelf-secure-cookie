@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:shelf/shelf.dart';
 
 import 'cookie_parser.dart';
@@ -13,13 +14,16 @@ import 'cookie_parser.dart';
 Middleware cookieParser([String secretKey = ""]) {
   return (Handler innerHandler) {
     return (Request request) {
+      final cookies = CookieParser.fromHeader(request.headers, secretKey);
       return Future.sync(() {
-        final cookies = CookieParser.fromHeader(request.headers, secretKey);
         return innerHandler(
           request.change(context: {'cookies': cookies}),
         );
       }).then((Response response) {
-        return response;
+        return cookies.isResponseEmpty
+            ? response
+            : response.change(
+                headers: {HttpHeaders.setCookieHeader: cookies.toHeader()});
       });
     };
   };

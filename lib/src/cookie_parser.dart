@@ -10,8 +10,13 @@ import 'package:shelf/shelf.dart';
 /// Stores all cookies in a [cookies] list, and has convenience
 /// methods to manipulate this list.
 class CookieParser {
-  /// A list of parsed cookies.
+  //There were two paths... We need to distinguish request and response cookies.
+  //So either clear each time the cookies store before returning response
+  //Or create a separate CookieParser for responses only and manually set 'Set-Cookie' header
+  //But I decided to split CookieParser.cookies list into two parts
+  // An original list of parsed request cookies.
   final List<Cookie> cookies = [];
+  final List<Cookie> responseCookies = [];
   final String _secretKey;
 
   // creates new empty CookieParser, same as CookieParser.fromCookieValue(null)
@@ -34,16 +39,21 @@ class CookieParser {
 
   /// Use this method to set Response's 'set-cookie' header
   /// Shelf now supports multiple 'set-cookie' values, that is why method returns List<String>
-  List<String> toHeader() => cookies.map((c) => c.toString()).toList();
+  List<String> toHeader() => responseCookies.map((c) => c.toString()).toList();
 
   /// Denotes whether the [cookies] list is empty.
   bool get isEmpty => cookies.isEmpty;
+  bool get isResponseEmpty => responseCookies.isEmpty;
 
   /// Retrieves a cookie by [name].
   Cookie? get(String name) =>
       cookies.firstWhereOrNull((Cookie cookie) => cookie.name == name);
 
-  /// Adds a new cookie to [cookies] list.
+  /// Retrieves a response cookie by [name]. You will rarely need this, but in case.
+  Cookie? getResponse(String name) =>
+      responseCookies.firstWhereOrNull((Cookie cookie) => cookie.name == name);
+
+  /// Adds a new cookie to [responseCookies] list.
   Cookie set(
     String name,
     String value, {
@@ -63,11 +73,11 @@ class CookieParser {
     if (maxAge != null) cookie.maxAge = maxAge;
 
     // Update existing cookie, or append new one to list.
-    var index = cookies.indexWhere((item) => item.name == name);
+    var index = responseCookies.indexWhere((item) => item.name == name);
     if (index != -1) {
-      cookies.replaceRange(index, index + 1, [cookie]);
+      responseCookies.replaceRange(index, index + 1, [cookie]);
     } else {
-      cookies.add(cookie);
+      responseCookies.add(cookie);
     }
     return cookie;
   }
@@ -141,11 +151,14 @@ class CookieParser {
   }
 
   /// Removes a cookie from list by [name].
+  /// Note: this does not delete a cookie in the browser
+  /// To remove the cookie from browser cache you need to set a new one
+  /// with exactly same name, path and domain, but with the expires date in the past, value is irrelevant
   void remove(String name) =>
-      cookies.removeWhere((Cookie cookie) => cookie.name == name);
+      responseCookies.removeWhere((Cookie cookie) => cookie.name == name);
 
   /// Clears the cookie list.
-  void clear() => cookies.clear();
+  void clear() => responseCookies.clear();
 }
 
 /// Parse a Cookie header value according to the rules in RFC 6265.

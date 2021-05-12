@@ -9,21 +9,21 @@ import 'package:test/test.dart';
 
 class NoCookieException implements Exception {}
 
+Matcher throwsNoCookieException = throwsA(isA<NoCookieException>());
+
 class TestRouter {
   Handler get handler {
     final router = Router();
 
     router.get('/gets', (Request request) async {
       var cookies = request.context["cookies"] as CookieParser;
-      if (cookies == null || cookies.get("user") == null)
-        throw NoCookieException();
+      if (cookies.get("user") == null) throw NoCookieException();
       return Response.ok("a");
     });
     router.get('/sets', (Request request) async {
-      final cp = CookieParser();
-      cp.set("user", "1");
-      return Response.ok("a",
-          headers: {HttpHeaders.setCookieHeader: cp.toHeader()});
+      var cookies = request.context["cookies"] as CookieParser;
+      cookies.set("user", "1");
+      return Response.ok("a");
     });
 
     var handler =
@@ -46,6 +46,16 @@ void main() {
     expect(cookies.isEmpty, isTrue);
   });
 
+  test('isResponseEmpty is true if header is empty', () {
+    var cookies = CookieParser.fromCookieValue(null);
+    expect(cookies.isResponseEmpty, isTrue);
+  });
+
+  test('isResponseEmpty is true if default constructor used', () {
+    var cookies = CookieParser();
+    expect(cookies.isResponseEmpty, isTrue);
+  });
+
   test('parses cookies from `cookie` header value', () {
     var cookies = CookieParser.fromCookieValue('foo=bar; baz=qux');
     expect(cookies.isEmpty, isFalse);
@@ -61,34 +71,33 @@ void main() {
     expect(cookies.get('baz')!.value, equals('qux'));
   });
 
-  test('adds new cookie to cookies list', () {
-    var cookies = CookieParser.fromCookieValue('foo=bar');
-    expect(cookies.isEmpty, isFalse);
-    expect(cookies.get('baz'), isNull);
+  test('adds new cookie to responseCookies list', () {
+    var cookies = CookieParser();
+    expect(cookies.getResponse('baz'), isNull);
     cookies.set('baz', 'qux');
-    expect(cookies.get('baz')!.value, 'qux');
+    expect(cookies.getResponse('baz')!.value, 'qux');
   });
 
   test('removes cookie from cookies list by name', () {
-    var cookies = CookieParser.fromCookieValue('foo=bar; baz=qux');
-    expect(cookies.get('baz')!.value, equals('qux'));
+    var cookies = CookieParser();
+    cookies.set('baz', 'qux');
     cookies.remove('baz');
-    expect(cookies.get('baz'), isNull);
+    expect(cookies.getResponse('baz'), isNull);
   });
 
   test('clears all cookies in list', () {
-    var cookies = CookieParser.fromCookieValue('foo=bar; baz=qux');
-    expect(cookies.get('baz')!.value, equals('qux'));
+    var cookies = CookieParser();
+    cookies.set('baz', 'qux');
     cookies.clear();
-    expect(cookies.isEmpty, isTrue);
+    expect(cookies.isResponseEmpty, isTrue);
   });
 
   //encrypted cookies
   test('encodes and ciphers an encrypted cookie', () async {
     final keyStr = "12345678901234567890123456789012";
-    var cookies = CookieParser.fromCookieValue(null, keyStr);
+    var cookies = CookieParser(keyStr);
     await cookies.setEncrypted('baz', 'qux');
-    var cookie = cookies.get('baz');
+    var cookie = cookies.getResponse('baz');
     var decoded = base64.decode(cookie!.value);
     final algorithm = AesGcm.with256bits();
     final key = await algorithm.newSecretKeyFromBytes(utf8.encode(keyStr));
@@ -108,54 +117,55 @@ void main() {
   test('decodes and deciphers an encrypted cookie', () async {
     final keyStr = "12345678901234567890123456789012";
     var cookies = CookieParser(keyStr);
-    await cookies.setEncrypted('baz', 'qux');
-    var cookie = await cookies.getEncrypted('baz');
-    expect(cookie != null, true);
-    expect(cookie!.value, 'qux');
+    var cookie = await cookies.setEncrypted('baz', 'qux');
+    //as cookies list is split now, need to create a new parser as if I'm working in a subsequent request
+    var cookie2 = Cookie.fromSetCookieValue(cookie.toString());
+    var cookies2 = CookieParser(keyStr)..cookies.add(cookie2);
+    var cookie3 = await cookies2.getEncrypted('baz');
+    expect(cookie3, isNotNull);
+    expect(cookie3!.value, 'qux');
   });
 
-  test('Middleware sets and reads cookies', () async {
+  test('Middleware reads cookies and does not write if not told to', () async {
     final cp = CookieParser();
     final cookie = cp.set("user", "1");
+    final request = Request(
+      'GET',
+      Uri.parse('http://localhost:8080/gets'),
+      headers: {"cookie": cookie.toString()},
+    );
+
+    expect(() async => await router(request), returnsNormally);
+
+    final Response response = await router(request);
+    expect(response.headers[HttpHeaders.setCookieHeader], null,
+        reason: "Does not retranslate cookies as before");
+  });
+
+  test('Middleware throws NoCookieException if expected cookie not set',
+      () async {
+    final cp = CookieParser();
     final cookieWrong = cp.set("user2", "1");
+    final request = Request(
+      'GET',
+      Uri.parse('http://localhost:8080/gets'),
+      headers: {"cookie": cookieWrong.toString()},
+    );
+    expect(() async => await router(request), throwsNoCookieException);
+  });
 
-    try {
-      final Response response = await router(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/gets'),
-        headers: {"cookie": cookie.toString()},
-      ));
-      expect(true, true, reason: "user cookie present in headers");
-      expect(response.headers[HttpHeaders.setCookieHeader], null,
-          reason: "Does not retranslate cookies as before");
-    } catch (e) {
-      expect(true, false, reason: e.toString());
-    }
-
-    try {
-      await router(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/gets'),
-        headers: {"cookie": cookieWrong.toString()},
-      ));
-      expect(true, false, reason: "Must throw NoCookieException");
-    } on NoCookieException {} catch (e) {
-      expect(true, false, reason: e.toString());
-    }
-
-    try {
-      final response = await router(Request(
-        'GET',
-        Uri.parse('http://localhost:8080/sets'),
-      ));
-      expect(response != null, true);
-      expect(response.headers[HttpHeaders.setCookieHeader] != null, true);
-      final cookie = Cookie.fromSetCookieValue(
-          response.headers[HttpHeaders.setCookieHeader]!);
-      expect(cookie.name, "user");
-      expect(cookie.value, "1");
-    } catch (e) {
-      expect(true, false, reason: e.toString());
-    }
+  test('Middleware sets a cookie', () async {
+    final request = Request(
+      'GET',
+      Uri.parse('http://localhost:8080/sets'),
+    );
+    expect(() async => await router(request), returnsNormally);
+    final response = await router(request);
+    expect(response, isNotNull);
+    expect(response.headers[HttpHeaders.setCookieHeader], isNotNull);
+    final cookie = Cookie.fromSetCookieValue(
+        response.headers[HttpHeaders.setCookieHeader]!);
+    expect(cookie.name, "user");
+    expect(cookie.value, "1");
   });
 }

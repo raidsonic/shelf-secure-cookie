@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2021-04-27
+### Changed
+- Changed original middleware, now you don't have to set response 'Set-Cookie' headers manually, it will handle it if you operate on Request.context['cookies'] storage, see example.
+- Now CookieParser have separated lists of Request cookies [cookies] and Response cookies [responseCookies], so this is a somewhat a breaking change.
+- Now 'get' methods operate on a request cookies list, and 'set' on a response list. The exception is a 'getResponse' method that allows to read a newly set cookie if you need that.
+
 ## [1.1.0] - 2021-04-27
 ### Fixed
 - Changed original middleware, now you have to set response headers explicitly, see example. But I will rearrange this later.

@@ -26,8 +26,7 @@ void main() {
 
     // Response will set cookie header.
     // e.g. 'set-cookie': 'pong=someencryptedandsignedvalue; Secure; HttpOnly'
-    return shelf.Response.ok('check your cookies',
-        headers: {HttpHeaders.setCookieHeader: cookies.toHeader()});
+    return shelf.Response.ok('check your cookies');
   });
 
   io.serve(handler, 'localhost', 8080).then((server) {
