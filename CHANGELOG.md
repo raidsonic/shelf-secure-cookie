@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2022-01-17
+### Changed
+- Allowed to use a key with different than 32-bytes length, what is more
+  user-friendly, but somewhat less secure. The key is padded with zeroes and
+  trimmed to 32 bytes automatically. Backward compatible.
+
 ## [1.2.0] - 2021-04-27
 ### Changed
 - Changed original middleware, now you don't have to set response 'Set-Cookie' headers manually, it will handle it if you operate on Request.context['cookies'] storage, see example.

@@ -1,13 +1,13 @@
 # shelf_secure_cookie
-API change: now encrypted cookies use `base64Url` encoding instead of plain `base64`. Also I changed middleware, now you have to set response headers explicitly, see TODO. Forgive me this, but I think this is a step in the right direction, I will find a handy workaround later.
+Encrypted cookies use `base64Url` encoding. See `example/example.dart` for details.
 
 Based on `shelf_cookie` package, added async `setEncrypted` and `getEncrypted` cookie methods, that support `AES-GCM` cipher with digest. These should be used to store sensitive data, if you prefer a cookie storage.
 
-Both methods require a 32-byte secret key.
+Both methods require a 32-byte secret key. You can use a key with a different
+length, but be warned that it will be padded with zeroes and trimed to 32
+bytes exactly.
 
 This package is not battle-tested yet, but I'm working on this. Also if you happened to download 1.0.0 version, update to >=1.0.2 as soon as possible.
-
-See `example/example.dart` for details.
 
 ## Original docs
 

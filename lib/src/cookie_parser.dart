@@ -20,11 +20,14 @@ class CookieParser {
   final String _secretKey;
 
   // creates new empty CookieParser, same as CookieParser.fromCookieValue(null)
-  CookieParser([String secretKey = ""]) : _secretKey = secretKey;
+  CookieParser([String secretKey = ""])
+      : _secretKey =
+            (secretKey + "00000000000000000000000000000000").substring(0, 32);
 
   /// Creates a new [CookieParser] by parsing the `Cookie` header [value].
   CookieParser.fromCookieValue(String? value, [String secretKey = ""])
-      : this._secretKey = secretKey {
+      : this._secretKey =
+            (secretKey + "00000000000000000000000000000000").substring(0, 32) {
     if (value != null) {
       cookies.addAll(_parseCookieString(value));
     }

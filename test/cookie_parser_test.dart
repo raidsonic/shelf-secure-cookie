@@ -126,6 +126,31 @@ void main() {
     expect(cookie3!.value, 'qux');
   });
 
+  test('works with key less than 32 bytes in length', () async {
+    final keyStr = "12345678901234567890";
+    var cookies = CookieParser(keyStr);
+    var cookie = await cookies.setEncrypted('baz', 'qux');
+    //as cookies list is split now, need to create a new parser as if I'm working in a subsequent request
+    var cookie2 = Cookie.fromSetCookieValue(cookie.toString());
+    var cookies2 = CookieParser(keyStr)..cookies.add(cookie2);
+    var cookie3 = await cookies2.getEncrypted('baz');
+    expect(cookie3, isNotNull);
+    expect(cookie3!.value, 'qux');
+  });
+
+  test('works with key more than 32 bytes in length', () async {
+    final keyStr =
+        "123456789012345678901234567890129999999999999999999999999999";
+    var cookies = CookieParser(keyStr);
+    var cookie = await cookies.setEncrypted('baz', 'qux');
+    //as cookies list is split now, need to create a new parser as if I'm working in a subsequent request
+    var cookie2 = Cookie.fromSetCookieValue(cookie.toString());
+    var cookies2 = CookieParser(keyStr)..cookies.add(cookie2);
+    var cookie3 = await cookies2.getEncrypted('baz');
+    expect(cookie3, isNotNull);
+    expect(cookie3!.value, 'qux');
+  });
+
   test('Middleware reads cookies and does not write if not told to', () async {
     final cp = CookieParser();
     final cookie = cp.set("user", "1");
