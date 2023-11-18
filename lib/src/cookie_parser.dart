@@ -57,16 +57,14 @@ class CookieParser {
       responseCookies.firstWhereOrNull((Cookie cookie) => cookie.name == name);
 
   /// Adds a new cookie to [responseCookies] list.
-  Cookie set(
-    String name,
-    String value, {
-    String? domain,
-    String? path,
-    DateTime? expires,
-    bool? httpOnly,
-    bool? secure,
-    int? maxAge,
-  }) {
+  Cookie set(String name, String value,
+      {String? domain,
+      String? path,
+      DateTime? expires,
+      bool? httpOnly,
+      bool? secure,
+      int? maxAge,
+      SameSite? sameSite}) {
     var cookie = Cookie(name, value);
     if (domain != null) cookie.domain = domain;
     if (path != null) cookie.path = path;
@@ -74,7 +72,7 @@ class CookieParser {
     if (httpOnly != null) cookie.httpOnly = httpOnly;
     if (secure != null) cookie.secure = secure;
     if (maxAge != null) cookie.maxAge = maxAge;
-
+    if (sameSite != null) cookie.sameSite = sameSite;
     // Update existing cookie, or append new one to list.
     var index = responseCookies.indexWhere((item) => item.name == name);
     if (index != -1) {
